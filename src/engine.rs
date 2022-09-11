@@ -17,17 +17,22 @@ pub enum EngineError {
   }
 
 
-pub struct Engine 
+pub struct Engine<'a>
 {
     lib  :  ft::Library,
-    
-    //face : ft::library: 
+    face :  ft::Face<'a>, //&'static ft::Face <'static> ,    
+    bpp  :  usize,
+    mapp :  [u8;256],
 }
 
-
-impl Engine 
+/// Engine is the engine to convert TTF font
+/// to bitmap font
+/// 
+impl <'a> Engine  <'a>
 {
-    pub fn new( font : &String, size: usize) -> Result<Engine, EngineError>
+    ///
+    /// Constuctor
+    pub fn new<'b>( font : &String, size: usize,  bbpp: u8, bmapp : &'b[ u8 ]  ) ->   Result<Engine <'a>, EngineError> 
     {
         let r = ft::Library::init();
         let lib = match r 
@@ -35,6 +40,9 @@ impl Engine
             Err(x) => Err(EngineError::FreeTypeError)?,
             Ok(x) => x,
         };
+
+//  FT_UInt interpreter_version = TT_INTERPRETER_VERSION_35;
+//  FT_Property_Set(library, "truetype", "interpreter-version", &interpreter_version);
 
 
         let face = lib.new_face(font, 0);
@@ -51,9 +59,13 @@ impl Engine
             Ok(x) => x,
         }
 
+        
         let e : Engine=Engine
         {
                 lib:  lib,
+                face: face,
+                bpp:  bbpp as usize,
+                mapp: bmapp.clone(),
                 
         };
         Ok(e)

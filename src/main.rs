@@ -82,7 +82,7 @@ fn main() {
             mapp[i as usize]=1;
         }
     }
-    let engine = engine::Engine::new( &args.font, args.size).expect("Failure to initialize engine");
+    let engine = engine::Engine::new( &args.font, args.size, args.bpp,mapp).expect("Failure to initialize engine");
       
     let ofile = File::create(args.output_file.clone()).expect("unable to create file");
     print_output_header(&ofile,&args);
