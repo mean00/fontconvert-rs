@@ -18,3 +18,4 @@ debug = 0
 [dependencies]
 freetype-rs = { version = "0.1.2"}
 clap = { version = "3.1.18",features = ["derive"]}
+heatshrink = { version = "0.1.0" }
