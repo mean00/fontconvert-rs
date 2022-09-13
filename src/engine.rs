@@ -2,9 +2,10 @@
 
 #![allow(dead_code)]
 #![allow(unused_variables)]
-
+#![allow(non_snake_case)]
 
 extern crate freetype as ft;
+use ft::FtResult as FtResult;
 
 const DPI: u32 = 141; // Approximate res. of Adafruit 2.8" TFT
 
@@ -16,12 +17,20 @@ pub enum EngineError {
     FileError,
     InternalError,
   }
+#[derive(Debug, Clone)]
+struct  PFXGlyph {
+    pub bitmapOffset : u16,
+    pub width : u8,
+    pub height : u8,
+    pub xAdvance : u8,
+    pub xOffset : i8,
+    pub yOffset : i8,
+}
 
-
-pub struct Engine<'a>
+pub struct Engine
 {
     lib  :  ft::Library,
-    face :  ft::Face<'a>, //&'static ft::Face <'static> ,   
+    face :  ft::Face, //&'static ft::Face <'static> ,   
     first:  usize,     
     last:  usize,
 }
@@ -31,11 +40,11 @@ pub struct Engine<'a>
 /// - font : Complete path to the ttf string to use
 /// - size : Size of the font in pixels
 /// 
-impl <'a> Engine  <'a>
+impl  Engine  
 {
     ///
     /// Constuctor
-    pub fn new<'b>( font : &String, size: usize  ) ->   Result<Engine <'a>, EngineError> 
+    pub fn new<'b>( font : &String, size: usize  ) ->   Result<Engine , EngineError> 
     {
         let r = ft::Library::init();
         let lib = match r 
@@ -76,11 +85,11 @@ impl <'a> Engine  <'a>
     /// compression : Heatshrink based compression
     /// map  : Map of glyphs to render [x]=0 => dont render, [x]=1 => render
     /// 
-    pub fn run( &mut self,bpp: usize, compression: bool , map : &[u8;256]  ) ->   Result< () , EngineError> 
+    pub fn run( &mut self,bpp: u8, compression: bool , map : &[u8;256]  ) ->   Result< () , EngineError> 
     {
         // scan map to find the 1st and last to process
-        let first : isize = -1;
-        let last : isize = 256;
+        let mut first : isize = -1;
+        let mut last : isize = 256;
         for i in 0..256
         {   
             if map[i]==0
@@ -101,22 +110,85 @@ impl <'a> Engine  <'a>
         };
         Ok(())
     }
+    ///
+    /// 
+    /// 
+    /// 
 
+    fn checkOk( &self, t: FtResult<()> ) -> bool
+    {
+        match t
+        {
+            Err(r) => false,
+            _      => true,
+        }
+    }
     ///
     /// 
     /// 
     fn convert1bit(&mut self, first : usize, last  : usize, map : &[u8;256] ) ->  Result< () , EngineError> 
     {
-        let zeroGlyph: ft::Glyph  ;
-        let glyph:     ft::Glyph  ;
-
+        let zeroGlyph :  PFXGlyph = PFXGlyph {            bitmapOffset : 0,
+                                                            width : 0,
+                                                            height : 0,
+                                                            xAdvance : 0,
+                                                            xOffset : 0,
+                                                            yOffset : 0,        };
+                
+        let mut processed_glyphs : Vec <PFXGlyph> = Vec::new();
         for i in first..last
         {
+            
+            let mut ok : bool =true;
+            let mut skipped: bool =false;
+            let mut glyph : Option<ft::Glyph>=None;
             if map[i]==0
+            {                
+                ok=false;
+                skipped=true;
+            }
+           
+            if ok
             {
-                //listOfGlyphs.push_back(zeroGlyph);
+                ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_NORMAL ));
+            }
+            if ok
+            {
+                ok = self.checkOk(  self.face.glyph().render_glyph( ft::RenderMode::Normal));
+            }            
+            if ok
+            {                
+                let r= self.face.glyph().get_glyph();
+                match r
+                {
+                    Err(r) => ok=false ,
+                    Ok(glyph2) => glyph=Some(glyph2) ,
+                };                        
+            }     
+            // Ok glyph contains the rendered glyph      
+            if ok == false && skipped == false 
+            {
+                // WARNING / ERROR
+                println!("Failed to render glyph {}",i);                
+            }
+            if ok==false
+            {
+                processed_glyphs.push(zeroGlyph.clone());
                 continue;
             }
+            let rbitmap=  glyph.unwrap().to_bitmap(ft::RenderMode::Normal, None).unwrap();
+            
+            
+            if ok==false
+            {
+                processed_glyphs.push(zeroGlyph.clone());
+                continue;
+            }
+            
+            let left = rbitmap.left();
+            let top = rbitmap.top();
+            let raw = rbitmap.raw();
+            
         }
 
         Ok(())
