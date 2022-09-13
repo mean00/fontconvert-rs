@@ -176,7 +176,7 @@ impl  Engine
                 processed_glyphs.push(zeroGlyph.clone());
                 continue;
             }
-            let rbitmap=  glyph.unwrap().to_bitmap(ft::RenderMode::Normal, None).unwrap();
+            let rbitmap: ft::BitmapGlyph=  glyph.unwrap().to_bitmap(ft::RenderMode::Normal, None).unwrap();
             
             
             if ok==false
@@ -187,7 +187,41 @@ impl  Engine
             
             let left = rbitmap.left();
             let top = rbitmap.top();
-            let raw = rbitmap.raw();
+            let bitmap: ft::Bitmap = rbitmap.bitmap();
+
+            let ww=bitmap.width();
+            let hh = bitmap.rows();
+            let pitch = bitmap.pitch();
+            let bits = bitmap.buffer();
+
+            for y in 0..hh
+            {
+                let index = y*pitch ;
+                for x in 0..ww
+                {
+                        let v= bits[(index+(x>>3)) as usize];
+                        let mask = 0x80>> (x&7);
+                        if (v & mask)!=0
+                        {
+                            print!("*");
+                        }else {
+                            print!(".");
+                        }
+                }
+                println!("");
+            }
+            /*
+            for (int y = 0; y < bitmap->rows; y++)
+            {
+              const uint8_t *line=bitmap->buffer+y * bitmap->pitch;
+              for (int x = 0; x < bitmap->width; x++)
+              {
+                int byte = x / 8;
+                int bit = 0x80 >> (x & 7);
+                bitPusher.addBit(line[byte] & bit);
+              }
+            }
+            */
             
         }
 
