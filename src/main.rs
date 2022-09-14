@@ -6,7 +6,9 @@ use std::fs::File;
 use std::io::Write;
 extern crate freetype as ft;
 
+
 mod engine;
+mod bit_pusher;
 
 const DPI:u32 = 141;
 

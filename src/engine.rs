@@ -4,9 +4,11 @@
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 
+
+
 extern crate freetype as ft;
 use ft::FtResult as FtResult;
-
+use crate::bit_pusher;
 const DPI: u32 = 141; // Approximate res. of Adafruit 2.8" TFT
 
 
@@ -33,6 +35,7 @@ pub struct Engine
     face :  ft::Face, //&'static ft::Face <'static> ,   
     first:  usize,     
     last:  usize,
+    bp : bit_pusher::bit_pusher,     
 }
 
 /// Engine is the engine to convert TTF font
@@ -76,7 +79,8 @@ impl  Engine
                 lib:  lib,
                 face: face,
                 first : 32,
-                last  : 128
+                last  : 128,
+                bp : bit_pusher::bit_pusher::new(),
         };
         Ok(e)
     }
