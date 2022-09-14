@@ -3,20 +3,20 @@
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 
-const BUFFER_SIZE: usize = (256*1024);
-pub struct bit_pusher
+const BUFFER_SIZE: usize = 256*1024;
+pub struct BitPusher
 {
-    bit : usize,
+    bit         : isize,
     accumulator : u8,
-    index : usize,
-    buffer : [u8;BUFFER_SIZE],
+    index       : usize,
+    buffer      : [u8;BUFFER_SIZE],
 }
 
-impl bit_pusher
+impl BitPusher
 {
-    pub fn new() -> bit_pusher
+    pub fn new() -> BitPusher
     {
-        bit_pusher{
+        BitPusher{
             bit : 7,
             accumulator : 0,
             index : 0,
@@ -50,12 +50,9 @@ impl bit_pusher
     pub fn add2bits(&mut self, val : u8) -> ()
     {
         let rval : u8 = val & 3;
-        self.accumulator |= (rval << (self.bit -1));
+        self.accumulator |= rval << (self.bit -1);
         self.bit = self.bit -2;
-        if(self.bit <0)
-        {
-            self.align();
-        }
+        self.checkAlign();
     }
     pub fn add1bits(&mut self, val : u8) -> ()
     {
@@ -64,6 +61,10 @@ impl bit_pusher
             self.accumulator |= 1<<self.bit;
         }
         self.bit =self.bit - 1;
+        self.checkAlign();
+    }
+    fn checkAlign(&mut self) -> ()
+    {
         if self.bit < 0
         {
             self.align();
@@ -71,7 +72,7 @@ impl bit_pusher
     }
     pub fn align(&mut self) -> ()
     {
-        if(self.bit ==7 )
+        if self.bit ==7 
         {
             return;
         }

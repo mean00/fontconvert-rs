@@ -35,7 +35,7 @@ pub struct Engine
     face :  ft::Face, //&'static ft::Face <'static> ,   
     first:  usize,     
     last:  usize,
-    bp : bit_pusher::bit_pusher,     
+    bp : bit_pusher::BitPusher,     
 }
 
 /// Engine is the engine to convert TTF font
@@ -80,7 +80,7 @@ impl  Engine
                 face: face,
                 first : 32,
                 last  : 128,
-                bp : bit_pusher::bit_pusher::new(),
+                bp : bit_pusher::BitPusher::new(),
         };
         Ok(e)
     }

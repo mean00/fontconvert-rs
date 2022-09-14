@@ -10,7 +10,6 @@ extern crate freetype as ft;
 mod engine;
 mod bit_pusher;
 
-const DPI:u32 = 141;
 
 #[derive(Parser, Debug)]
 #[clap(author="mean00",version="0.1",about="Enhanced TTF to GFX converter",long_about = None)]
