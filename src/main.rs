@@ -23,15 +23,15 @@ struct Config {
     /// bitmap file
     #[clap(short='m', long, default_value = "")]
     bitmap_file: String,
-    /// Size of the font to render
     #[clap(short, long)]
+    /// Size of the font to render
     size: usize,
     /// Ascii value of the first char to render
-    #[clap(short, long, default_value = "32")]
-    /// Ascii value of the last char to render
+    #[clap(short, long, default_value = "32")]    
     begin: u8,
+    /// Ascii value of the last char to render
     #[clap(short, long, default_value = "127")]
-    end: u8,
+    end: u8,   
     /// bpp  (1= B&W, 2=4 levels of grey, 4 = 16 levels of grey)
     #[clap(short='p', long, default_value = "1")]
     bpp: u8,

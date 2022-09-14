@@ -23,6 +23,10 @@ impl BitPusher
             buffer: [0 ; BUFFER_SIZE],
         }
     }
+    pub fn size(&self) -> usize
+    {
+        self.index
+    }
     pub fn swallow(&mut self, data : &[u8]) -> ()
     {
         let n = data.len();

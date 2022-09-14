@@ -28,7 +28,20 @@ struct  PFXGlyph {
     pub xOffset : i8,
     pub yOffset : i8,
 }
-
+impl PFXGlyph
+{
+    fn new () -> PFXGlyph
+    {
+        PFXGlyph{
+            bitmapOffset : 0,
+            width : 0,
+            height : 0,
+            xAdvance : 0,
+            yOffset : 0,
+            xOffset : 0,
+        }
+    }
+}
 pub struct Engine
 {
     lib  :  ft::Library,
@@ -36,6 +49,7 @@ pub struct Engine
     first:  usize,     
     last:  usize,
     bp : bit_pusher::BitPusher,     
+    face_height : i8,
 }
 
 /// Engine is the engine to convert TTF font
@@ -81,6 +95,7 @@ impl  Engine
                 first : 32,
                 last  : 128,
                 bp : bit_pusher::BitPusher::new(),
+                face_height : 0,
         };
         Ok(e)
     }
@@ -156,6 +171,7 @@ impl  Engine
             {
                 ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_MONO ));
             }
+            self.face_height = self.face.size_metrics().unwrap().height as i8;
            // if ok
            // {
            //     ok = self.checkOk(  self.face.glyph().render_glyph( ft::RenderMode::Normal));
@@ -180,8 +196,9 @@ impl  Engine
                 processed_glyphs.push(zeroGlyph.clone());
                 continue;
             }
-
-            let rbitmap: ft::BitmapGlyph=  glyph.unwrap().to_bitmap(ft::RenderMode::Mono, None).unwrap();                        
+            let gl = glyph.unwrap();
+            let x_advance=gl.advance_x();
+            let rbitmap: ft::BitmapGlyph=  gl.to_bitmap(ft::RenderMode::Mono, None).unwrap();                        
             let left = rbitmap.left();
             let top = rbitmap.top();
             let bitmap: ft::Bitmap = rbitmap.bitmap();
@@ -195,8 +212,17 @@ impl  Engine
             {
                 processed_glyphs.push(zeroGlyph.clone());
                 continue;
-            }
-            println!("---{}",i);
+            }      
+            let mut thisPFX : PFXGlyph = PFXGlyph::new();
+            self.bp.align();
+            thisPFX.bitmapOffset = self.bp.size() as u16;
+            thisPFX.width = ww as u8;
+            thisPFX.height = hh as u8;
+            thisPFX.xAdvance = (x_advance >> 6) as u8;
+            thisPFX.xOffset = left as i8;
+            thisPFX.yOffset = (1 - top) as i8;
+            processed_glyphs.push(thisPFX);
+    
             for y in 0..hh
             {
                 let index = y*pitch ;
@@ -206,14 +232,15 @@ impl  Engine
                         let mask = 0x80>> (x&7);
                         if (v & mask)!=0
                         {
-                            print!("*");
+                            self.bp.add1bits(1);
                         }else {
-                            print!(".");
+                            self.bp.add1bits(0);
                         }
-                }
-                println!("");
-            }
+                }                
+            }            
         }
+        self.bp.align();
+        println!("Processed {} glyphs, bitmap size {}",processed_glyphs.len(),self.bp.size());
         Ok(())
     }
 }
