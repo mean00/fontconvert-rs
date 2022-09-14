@@ -6,7 +6,7 @@
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceRoot}/target/debug/flatconvert-rs",
-            "args": ["--size","12","--output-file","/tmp/z","--font","/usr/share/fonts/google-noto/NotoSans-Bold.ttf"],
+            "args": [ "--begin" , "36" , "--end" , "40" ,"--size","12","--output-file","/tmp/z","--font","/usr/share/fonts/google-noto/NotoSans-Bold.ttf"],
             "cwd": "${workspaceRoot}",
     ],
 }

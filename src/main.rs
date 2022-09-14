@@ -91,7 +91,7 @@ fn main() {
 
     let ofile = File::create(args.output_file.clone()).expect("unable to create file");
     print_output_header(&ofile,&args);
-
+    drop(ofile); // make sure it's closed
 
 
     println!("-Done-") 

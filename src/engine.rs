@@ -150,12 +150,12 @@ impl  Engine
            
             if ok
             {
-                ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_NORMAL ));
+                ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_MONO ));
             }
-            if ok
-            {
-                ok = self.checkOk(  self.face.glyph().render_glyph( ft::RenderMode::Normal));
-            }            
+           // if ok
+           // {
+           //     ok = self.checkOk(  self.face.glyph().render_glyph( ft::RenderMode::Normal));
+           // }            
             if ok
             {                
                 let r= self.face.glyph().get_glyph();
@@ -176,15 +176,8 @@ impl  Engine
                 processed_glyphs.push(zeroGlyph.clone());
                 continue;
             }
-            let rbitmap: ft::BitmapGlyph=  glyph.unwrap().to_bitmap(ft::RenderMode::Normal, None).unwrap();
-            
-            
-            if ok==false
-            {
-                processed_glyphs.push(zeroGlyph.clone());
-                continue;
-            }
-            
+
+            let rbitmap: ft::BitmapGlyph=  glyph.unwrap().to_bitmap(ft::RenderMode::Mono, None).unwrap();                        
             let left = rbitmap.left();
             let top = rbitmap.top();
             let bitmap: ft::Bitmap = rbitmap.bitmap();
@@ -194,6 +187,12 @@ impl  Engine
             let pitch = bitmap.pitch();
             let bits = bitmap.buffer();
 
+            if ww==0 || hh==0
+            {
+                processed_glyphs.push(zeroGlyph.clone());
+                continue;
+            }
+            println!("---{}",i);
             for y in 0..hh
             {
                 let index = y*pitch ;
@@ -210,83 +209,8 @@ impl  Engine
                 }
                 println!("");
             }
-            /*
-            for (int y = 0; y < bitmap->rows; y++)
-            {
-              const uint8_t *line=bitmap->buffer+y * bitmap->pitch;
-              for (int x = 0; x < bitmap->width; x++)
-              {
-                int byte = x / 8;
-                int bit = 0x80 >> (x & 7);
-                bitPusher.addBit(line[byte] & bit);
-              }
-            }
-            */
-            
         }
-
         Ok(())
     }
 }
-     /*
-         // MONO renderer provides clean image with perfect crop
-         // (no wasted pixels) via bitmap struct.
-         bool renderingOk=true;
-         if ((err = FT_Load_Char(face, i, FT_LOAD_TARGET_MONO))) {     fprintf(stderr, "Error %d loading char '%c'\n", err, i); renderingOk=false;   }
-         if ((err = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_MONO))) {      fprintf(stderr, "Error %d rendering char '%c'\n", err, i);     renderingOk=false;  }
-         if ((err = FT_Get_Glyph(face->glyph, &glyph))) {      fprintf(stderr, "Error %d getting glyph '%c'\n", err, i);    renderingOk=false;    }
- 
-         if(!renderingOk)
-         {
-             listOfGlyphs.push_back(zeroGlyph);
-             continue;
-         }
-         FT_Bitmap *bitmap = &face->glyph->bitmap;
-         FT_BitmapGlyphRec *g= (FT_BitmapGlyphRec *)glyph;
- 
-         // Minimal font and per-glyph information is stored to
-         // reduce flash space requirements.  Glyph bitmaps are
-         // fully bit-packed; no per-scanline pad, though end of
-         // each character may be padded to next byte boundary
-         // when needed.  16-bit offset means 64K max for bitmaps,
-         // code currently doesn't check for overflow.  (Doesn't
-         // check that size & offsets are within bounds either for
-         // that matter...please convert fonts responsibly.)
-         bitPusher.align();
-         int startOffset=bitPusher.offset();
-         
-         
-         PFXglyph thisGlyph;
-         thisGlyph.bitmapOffset = bitPusher.offset();
-         thisGlyph.width = bitmap->width;
-         thisGlyph.height = bitmap->rows;
-         thisGlyph.xAdvance = face->glyph->advance.x >> 6;
-         thisGlyph.xOffset = g->left;
-         thisGlyph.yOffset = 1 - g->top;
-         listOfGlyphs.push_back(thisGlyph);
- 
-         for (int y = 0; y < bitmap->rows; y++)
-         {
-           const uint8_t *line=bitmap->buffer+y * bitmap->pitch;
-           for (int x = 0; x < bitmap->width; x++)
-           {
-             int byte = x / 8;
-             int bit = 0x80 >> (x & 7);
-             bitPusher.addBit(line[byte] & bit);
-           }
-         }
-         bitPusher.align();
-         int size=bitPusher.offset()-startOffset;
-         _totalUncompressedSize+=size;
-         if(compressed)
-         {
-             compressInPlace((uint8_t *)(bitPusher.data()+startOffset),size);
-             bitPusher.setOffset(startOffset+size);
-         }
-     }
-     face_height= face->size->metrics.height >> 6;
-     FT_Done_Glyph(glyph);
-     return true;
-  }
- */
- 
+// EOF
