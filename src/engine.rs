@@ -124,7 +124,7 @@ impl  Engine
       
         let status = match bpp
         {
-            1 => self.convert1bit(first as usize, last as usize, map  ),
+            1 => self.convert1bit(first as usize, last as usize, map ,compression ),
             _ => Err(EngineError::InternalError)?,
         };
         Ok(())
@@ -145,7 +145,7 @@ impl  Engine
     ///
     /// 
     /// 
-    fn convert1bit(&mut self, first : usize, last  : usize, map : &[u8;256] ) ->  Result< () , EngineError> 
+    fn convert1bit(&mut self, first : usize, last  : usize, map : &[u8;256], compression : bool ) ->  Result< () , EngineError> 
     {
         let zeroGlyph :  PFXGlyph = PFXGlyph {            bitmapOffset : 0,
                                                             width : 0,
@@ -208,6 +208,8 @@ impl  Engine
             let pitch = bitmap.pitch();
             let bits = bitmap.buffer();
 
+            let start_offset = self.bp.size();
+
             if ww==0 || hh==0
             {
                 processed_glyphs.push(zeroGlyph.clone());
@@ -238,10 +240,24 @@ impl  Engine
                         }
                 }                
             }            
+        
+            self.bp.align();
+            println!("Processed {} glyphs, bitmap size {}",processed_glyphs.len(),self.bp.size());
+            if compression
+            {
+                // in pace packing...
+                let original_size = self.bp.size()-start_offset;
+                let size = self.compressInPlace(start_offset,original_size);
+                self.bp.set_offset(start_offset+size);
+            }
         }
-        self.bp.align();
-        println!("Processed {} glyphs, bitmap size {}",processed_glyphs.len(),self.bp.size());
         Ok(())
     }
+
+    fn compressInPlace(&mut self, offset : usize, size : usize) -> usize
+    {
+        size
+    }
+
 }
 // EOF

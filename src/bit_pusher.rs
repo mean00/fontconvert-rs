@@ -27,6 +27,11 @@ impl BitPusher
     {
         self.index
     }
+    pub fn set_offset(&mut self, set_offset: usize) -> ()
+    {
+        self.index=set_offset;
+        self.bit = 7;
+    }
     pub fn swallow(&mut self, data : &[u8]) -> ()
     {
         let n = data.len();
