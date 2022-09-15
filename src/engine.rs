@@ -7,7 +7,10 @@
 
 
 extern crate freetype as ft;
+extern crate heatshrink;
 use ft::FtResult as FtResult;
+use heatshrink as hs;
+
 use crate::bit_pusher;
 const DPI: u32 = 141; // Approximate res. of Adafruit 2.8" TFT
 
@@ -26,7 +29,7 @@ struct  PFXGlyph {
     pub height : u8,
     pub xAdvance : u8,
     pub xOffset : i8,
-    pub yOffset : i8,
+    pub yOffset : i8,    
 }
 impl PFXGlyph
 {
@@ -48,8 +51,11 @@ pub struct Engine
     face :  ft::Face, //&'static ft::Face <'static> ,   
     first:  usize,     
     last:  usize,
+    bpp  : usize,
     bp : bit_pusher::BitPusher,     
     face_height : i8,
+    processed_glyphs : Vec <PFXGlyph>,
+    compression : bool, 
 }
 
 /// Engine is the engine to convert TTF font
@@ -96,6 +102,9 @@ impl  Engine
                 last  : 128,
                 bp : bit_pusher::BitPusher::new(),
                 face_height : 0,
+                processed_glyphs : Vec::new(),
+                bpp  : 0,
+                compression : false,
         };
         Ok(e)
     }
@@ -147,6 +156,8 @@ impl  Engine
     /// 
     fn convert1bit(&mut self, first : usize, last  : usize, map : &[u8;256], compression : bool ) ->  Result< () , EngineError> 
     {
+        self.bpp = 1;
+        self.compression = compression;
         let zeroGlyph :  PFXGlyph = PFXGlyph {            bitmapOffset : 0,
                                                             width : 0,
                                                             height : 0,
@@ -154,7 +165,8 @@ impl  Engine
                                                             xOffset : 0,
                                                             yOffset : 0,        };
                 
-        let mut processed_glyphs : Vec <PFXGlyph> = Vec::new();
+        
+        self.processed_glyphs.clear();
         for i in first..last
         {
             
@@ -193,7 +205,7 @@ impl  Engine
             }
             if ok==false
             {
-                processed_glyphs.push(zeroGlyph.clone());
+                self.processed_glyphs.push(zeroGlyph.clone());
                 continue;
             }
             let gl = glyph.unwrap();
@@ -212,7 +224,7 @@ impl  Engine
 
             if ww==0 || hh==0
             {
-                processed_glyphs.push(zeroGlyph.clone());
+                self.processed_glyphs.push(zeroGlyph.clone());
                 continue;
             }      
             let mut thisPFX : PFXGlyph = PFXGlyph::new();
@@ -223,7 +235,7 @@ impl  Engine
             thisPFX.xAdvance = (x_advance >> 6) as u8;
             thisPFX.xOffset = left as i8;
             thisPFX.yOffset = (1 - top) as i8;
-            processed_glyphs.push(thisPFX);
+            self.processed_glyphs.push(thisPFX);
     
             for y in 0..hh
             {
@@ -242,7 +254,7 @@ impl  Engine
             }            
         
             self.bp.align();
-            println!("Processed {} glyphs, bitmap size {}",processed_glyphs.len(),self.bp.size());
+            println!("Processed {} glyphs, bitmap size {}",self.processed_glyphs.len(),self.bp.size());
             if compression
             {
                 // in pace packing...
@@ -256,8 +268,84 @@ impl  Engine
 
     fn compressInPlace(&mut self, offset : usize, size : usize) -> usize
     {
+      //  let encoder = hs::HeatshrinkEncoder::new(input, output, cfg);
+      //  encoder.encode();
+        
         size
     }
+    pub fn dump_bitmap(&mut self, name : &str) -> ()
+    {
+        print!("const uint8_t {}Bitmaps[] PROGMEM = {{\n",name);
+        self.bp.align();
+        let sz = self.bp.size();
+      
+        let mut tab=0;
+        for i in 0..sz
+        {
+            //print!(" 0x%02X,",data[i]);
+            print!(" {:#04x},",self.bp.data(i));
+            tab=tab+1;
+            if tab==12
+            {
+                println!("");
+                tab=0;
+            }
+        }
+        print!(" }};\n\n");
+    }
+    pub fn dump_index(&mut self, name : &str)
+    {
+      print!("const PFXglyph {}Glyphs[] PROGMEM = {{\n", name);
+      for i in self.first..self.last
+      {
+        let glyph=(self.processed_glyphs[i-self.first]).clone();
+        print!("  {{ {}, {}, {}, {}, {}, {}}}",
+               glyph.bitmapOffset,
+               glyph.width,
+               glyph.height,
+               glyph.xAdvance,
+               glyph.xOffset,
+               glyph.yOffset as isize);
+        print!(",   // 0x{:#04x} '{}' \n", i,i as u8 as char);
+      }
+      print!("\n}};\n");
+    }
+    
+    
 
+
+    pub fn dump_footer(&mut self, name : &str) -> ()
+    {
+  // Output font structure
+        print!("const PFXfont {} PROGMEM = {{\n", name);
+        print!("  (uint8_t  *){}Bitmaps,\n", name);
+        print!("  (PFXglyph *){}Glyphs,\n", name);
+        if self.face_height == 0
+        {  // No face height info, assume fixed width and get from a glyph.
+            print!("  {:#04x},{:#04x}, {},\n" , self.first, self.last, self.processed_glyphs[0].height);
+        }
+        else
+        {
+            print!("  {:#04x},{:#04x}, {},\n" , self.first, self.last, self.face_height);         
+        }
+        print!("  {},{}}}; // bit per pixel, compression \n\n",self.bpp,self.compression as usize);
+        let sz=self.bp.size();
+        if self.compression
+        {
+//            print!("// Bitmap uncompressed : about {} bytes ({} kBytes)\n",_totalUncompressedSize,(_totalUncompressedSize+1023)/1024);    
+            print!("// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);            
+//            print!("// compressed size : {} %\n",(100*sz)/_totalUncompressedSize);
+        }
+        else {
+            print!("// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);            
+        }
+
+        let sizeofglyph =  8; // FIXME BADLY
+        let mut sz=(self.last-self.first+1)*sizeofglyph;
+        print!("// Header : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);
+        sz=sz+self.bp.size()+sizeofglyph;
+        print!("//--------------------------------------\n");
+        print!("// total : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);
+    }
 }
 // EOF

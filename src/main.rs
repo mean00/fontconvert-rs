@@ -5,6 +5,7 @@ use clap::Parser;
 use std::fs::File;
 use std::io::Write;
 extern crate freetype as ft;
+extern crate heatshrink as hs;
 
 
 mod engine;
@@ -88,7 +89,9 @@ fn main() {
     engine.run(args.bpp , 
         args.compression, 
         &mapp)  .expect("Failed to render fonts");
-
+    engine.dump_bitmap("tttt");
+    engine.dump_index("tttt");
+    engine.dump_footer("tttt");
 
     let ofile = File::create(args.output_file.clone()).expect("unable to create file");
     print_output_header(&ofile,&args);

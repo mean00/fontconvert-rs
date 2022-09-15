@@ -23,6 +23,10 @@ impl BitPusher
             buffer: [0 ; BUFFER_SIZE],
         }
     }
+    pub fn data( &self, i : usize ) -> u8
+    {        
+        return self.buffer[i];
+    }
     pub fn size(&self) -> usize
     {
         self.index
