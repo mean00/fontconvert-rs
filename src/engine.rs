@@ -130,10 +130,12 @@ impl  Engine
             }
             last=i as isize;
         }
-      
+        self.first = first as usize;
+        self.last = last as usize;
+        self.compression = compression;
         let status = match bpp
         {
-            1 => self.convert1bit(first as usize, last as usize, map ,compression ),
+            1 => self.convert1bit( map ),
             _ => Err(EngineError::InternalError)?,
         };
         Ok(())
@@ -154,10 +156,9 @@ impl  Engine
     ///
     /// 
     /// 
-    fn convert1bit(&mut self, first : usize, last  : usize, map : &[u8;256], compression : bool ) ->  Result< () , EngineError> 
+    fn convert1bit(&mut self, map : &[u8;256] ) ->  Result< () , EngineError> 
     {
         self.bpp = 1;
-        self.compression = compression;
         let zeroGlyph :  PFXGlyph = PFXGlyph {            bitmapOffset : 0,
                                                             width : 0,
                                                             height : 0,
@@ -167,7 +168,7 @@ impl  Engine
                 
         
         self.processed_glyphs.clear();
-        for i in first..last
+        for i in self.first..=self.last
         {
             
             let mut ok : bool =true;
@@ -183,7 +184,9 @@ impl  Engine
             {
                 ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_MONO ));
             }
-            self.face_height = self.face.size_metrics().unwrap().height as i8;
+            let metrics =  self.face.size_metrics().unwrap();
+            self.face_height = (metrics.height /64) as i8;
+            //self.face_height = self.face.size_metrics().unwrap().height as i8;
            // if ok
            // {
            //     ok = self.checkOk(  self.face.glyph().render_glyph( ft::RenderMode::Normal));
@@ -209,7 +212,11 @@ impl  Engine
                 continue;
             }
             let gl = glyph.unwrap();
-            let x_advance=gl.advance_x();
+            let mut x_advance=gl.advance_x();
+            if x_advance > 0x10000 // workaround a bug in freetype RS
+            {
+                x_advance = x_advance >> 16;
+            }
             let rbitmap: ft::BitmapGlyph=  gl.to_bitmap(ft::RenderMode::Mono, None).unwrap();                        
             let left = rbitmap.left();
             let top = rbitmap.top();
@@ -232,7 +239,7 @@ impl  Engine
             thisPFX.bitmapOffset = self.bp.size() as u16;
             thisPFX.width = ww as u8;
             thisPFX.height = hh as u8;
-            thisPFX.xAdvance = (x_advance >> 6) as u8;
+            thisPFX.xAdvance = x_advance as u8;
             thisPFX.xOffset = left as i8;
             thisPFX.yOffset = (1 - top) as i8;
             self.processed_glyphs.push(thisPFX);
@@ -255,7 +262,7 @@ impl  Engine
         
             self.bp.align();
             println!("Processed {} glyphs, bitmap size {}",self.processed_glyphs.len(),self.bp.size());
-            if compression
+            if self.compression
             {
                 // in pace packing...
                 let original_size = self.bp.size()-start_offset;
@@ -296,17 +303,17 @@ impl  Engine
     pub fn dump_index(&mut self, name : &str)
     {
       print!("const PFXglyph {}Glyphs[] PROGMEM = {{\n", name);
-      for i in self.first..self.last
+      for i in self.first..=self.last
       {
         let glyph=(self.processed_glyphs[i-self.first]).clone();
-        print!("  {{ {}, {}, {}, {}, {}, {}}}",
+        print!("  {{ {:5}, {:3}, {:3}, {:3}, {:4}, {:4}}}",
                glyph.bitmapOffset,
                glyph.width,
                glyph.height,
                glyph.xAdvance,
                glyph.xOffset,
                glyph.yOffset as isize);
-        print!(",   // 0x{:#04x} '{}' \n", i,i as u8 as char);
+        print!(",   // {:#04x} '{}' \n", i,i as u8 as char);
       }
       print!("\n}};\n");
     }
@@ -322,11 +329,11 @@ impl  Engine
         print!("  (PFXglyph *){}Glyphs,\n", name);
         if self.face_height == 0
         {  // No face height info, assume fixed width and get from a glyph.
-            print!("  {:#04x},{:#04x}, {},\n" , self.first, self.last, self.processed_glyphs[0].height);
+            print!("  {:#04x}, {:#04x}, {}, // first, last, advance (approx)\n" , self.first, self.last, self.processed_glyphs[0].height);
         }
         else
         {
-            print!("  {:#04x},{:#04x}, {},\n" , self.first, self.last, self.face_height);         
+            print!("  {:#04x}, {:#04x}, {},// first, last, advance\n" , self.first, self.last, self.face_height);         
         }
         print!("  {},{}}}; // bit per pixel, compression \n\n",self.bpp,self.compression as usize);
         let sz=self.bp.size();

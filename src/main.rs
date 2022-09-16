@@ -80,7 +80,7 @@ fn main() {
         }    
     }else
     {
-        for i in args.begin..args.end
+        for i in args.begin..=args.end
         {
             mapp[i as usize]=1;
         }

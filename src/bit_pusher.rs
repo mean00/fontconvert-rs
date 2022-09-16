@@ -92,5 +92,6 @@ impl BitPusher
         self.buffer[self.index]=self.accumulator;
         self.index = self.index + 1;
         self.bit = 7;
+        self.accumulator=0;
     }
 }
