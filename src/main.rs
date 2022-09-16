@@ -1,9 +1,11 @@
 #![allow(non_snake_case)]
-
+#![feature(path_file_prefix)]
 use clap;
 use clap::Parser;
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
+use std::ffi::OsStr;
 extern crate freetype as ft;
 extern crate heatshrink as hs;
 
@@ -90,11 +92,27 @@ fn main() {
         args.compression, 
         &mapp)  .expect("Failed to render fonts");
     
+   
+    let mut symbol_name : String ;
+//->
+    
+    let path = Path::new(&args.font);
+    symbol_name = String::from(path.file_prefix().unwrap().to_str().unwrap());
+
+    
+
+    
+
+    //symbol_name = String::from(path.file_name().unwrap().to_str().unwrap());
+    symbol_name = symbol_name.replace(" ","_");
+    symbol_name = symbol_name.replace("-","_");
+    let extension = args.size.to_string()+"pt7b";     // [size]pt[7]
+    symbol_name.push_str(&extension);
+
+
+
     let mut ofile = File::create(args.output_file.clone()).expect("unable to create file");        
-
     print_output_header(&ofile,&args);
-    let mut symbol_name : String = String::from("NotoSans_Bold12pt7b");
-
     engine.dump_bitmap(&mut ofile, &symbol_name);
     engine.dump_index(&mut ofile, &symbol_name);
     engine.dump_footer(&mut ofile, &symbol_name);
