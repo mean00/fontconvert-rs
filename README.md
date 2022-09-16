@@ -1,7 +1,8 @@
 **flatconvert-rs : Tweakable embedded font conversion**
 This is a rust version of https://github.com/charles-haynes/fontconvert, which is a fork of adafruit font convert
 
-It is a truetype to adafruit font file tool. This adds compression, char selection and 1/2/4 bit per pixel support (smooth fonts)
+This is a truetype-to-adafruit font file tool. 
+This adds compression, chasr selection and 1/2/4 bit per pixel support (for smoother fonts)
 
 USAGE:
     flatconvert-rs [OPTIONS] --font <FONT> --output-file <OUTPUT_FILE> --size <SIZE>
