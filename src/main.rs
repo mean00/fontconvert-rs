@@ -89,12 +89,16 @@ fn main() {
     engine.run(args.bpp , 
         args.compression, 
         &mapp)  .expect("Failed to render fonts");
-    engine.dump_bitmap("tttt");
-    engine.dump_index("tttt");
-    engine.dump_footer("tttt");
+    
+    let mut ofile = File::create(args.output_file.clone()).expect("unable to create file");        
 
-    let ofile = File::create(args.output_file.clone()).expect("unable to create file");
     print_output_header(&ofile,&args);
+    let mut symbol_name : String = String::from("NotoSans_Bold12pt7b");
+
+    engine.dump_bitmap(&mut ofile, &symbol_name);
+    engine.dump_index(&mut ofile, &symbol_name);
+    engine.dump_footer(&mut ofile, &symbol_name);
+
     drop(ofile); // make sure it's closed
 
 
