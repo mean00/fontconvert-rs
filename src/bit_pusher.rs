@@ -23,6 +23,16 @@ impl BitPusher
             buffer: [0 ; BUFFER_SIZE],
         }
     }
+
+///
+    pub fn extract(&mut self, start : usize, size : usize) -> &[u8]
+    {
+        &self.buffer[start..(start+size)]
+    }
+    pub fn truncate(&mut self, size : usize) -> ()
+    {
+        self.index = size;
+    }
     pub fn data( &self, i : usize ) -> u8
     {        
         return self.buffer[i];

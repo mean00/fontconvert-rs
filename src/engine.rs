@@ -58,6 +58,7 @@ pub struct Engine
     face_height : i8,
     processed_glyphs : Vec <PFXGlyph>,
     compression : bool, 
+    uncompressed : usize,
 }
 
 /// Engine is the engine to convert TTF font
@@ -66,7 +67,7 @@ pub struct Engine
 /// - size : Size of the font in pixels
 /// 
 impl  Engine  
-{
+{    
     ///
     /// Constuctor
     pub fn new<'b>( font : &String, size: usize  ) ->   Result<Engine , EngineError> 
@@ -107,6 +108,7 @@ impl  Engine
                 processed_glyphs : Vec::new(),
                 bpp  : 0,
                 compression : false,
+                uncompressed : 0,
         };
         Ok(e)
     }
@@ -268,6 +270,7 @@ impl  Engine
             {
                 // in pace packing...
                 let original_size = self.bp.size()-start_offset;
+                self.uncompressed += original_size;
                 let size = self.compressInPlace(start_offset,original_size);
                 self.bp.set_offset(start_offset+size);
             }
@@ -277,10 +280,16 @@ impl  Engine
 
     fn compressInPlace(&mut self, offset : usize, size : usize) -> usize
     {
-      //  let encoder = hs::HeatshrinkEncoder::new(input, output, cfg);
-      //  encoder.encode();
-        
-        size
+        let cfg = hs::Config::new(8,4).unwrap();
+        let mut output : [u8;20*1024]=[0;20*1024];
+        let compressed_size = match hs::encode(self.bp.extract(offset,size), 
+            &mut output, 
+            &cfg)
+        {
+            Err(x) => 0,
+            Ok(x) => {self.bp.truncate(offset);self.bp.swallow(x);x.len()},
+        };
+        compressed_size
     }
     pub fn dump_bitmap(&mut self, ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
@@ -343,18 +352,21 @@ impl  Engine
         let sz=self.bp.size();
         if self.compression
         {
+            write!(ofile,"// Bitmap uncompressed  : about {} bytes ({} kBytes)\n",self.uncompressed, (self.uncompressed+1023)/1024)?;
             write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
+            write!(ofile,"// Bitmap compression   : {}%\n", (((sz as f32)*100.)/(self.uncompressed as f32)) as u32)?;
         }
         else {
             write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
         }
 
         let sizeofglyph =  8; // FIXME BADLY
+        let sizeofpfxgly: usize = 16;
         let mut sz=(self.last-self.first+1)*sizeofglyph;
         write!(ofile,"// Header : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
-        sz=sz+self.bp.size()+sizeofglyph;
+        sz=sz+self.bp.size()+sizeofpfxgly;
         write!(ofile,"//--------------------------------------\n")?;
-        write!(ofile,"// total : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
+        write!(ofile,"// Total : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
         Ok(())
     }
 }
