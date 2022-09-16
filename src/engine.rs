@@ -11,7 +11,7 @@ extern crate heatshrink;
 use ft::FtResult as FtResult;
 use heatshrink as hs;
 use std::fs::File;
-use std::io::{Write, BufReader, BufRead, Error};
+use std::io::{Write};
 
 use crate::bit_pusher;
 const DPI: u32 = 141; // Approximate res. of Adafruit 2.8" TFT
@@ -282,9 +282,9 @@ impl  Engine
         
         size
     }
-    pub fn dump_bitmap(&mut self, ofile : &mut File, name : &str) -> ()
+    pub fn dump_bitmap(&mut self, ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
-        write!(ofile,"const uint8_t {}Bitmaps[] PROGMEM = {{\n ",name);
+        write!(ofile,"const uint8_t {}Bitmaps[] PROGMEM = {{\n ",name)?;
         self.bp.align();
         let sz = self.bp.size();
       
@@ -292,19 +292,20 @@ impl  Engine
         for i in 0..sz
         {
             //print!(" 0x%02X,",data[i]);
-            write!(ofile," {:#04X},",self.bp.data(i));
+            write!(ofile," {:#04X},",self.bp.data(i))?;
             tab=tab+1;
             if tab==12
             {
-                write!(ofile,"\n ");
+                write!(ofile,"\n ")?;
                 tab=0;
             }
         }
-        write!(ofile," }};\n\n");
+        write!(ofile," }};\n\n")?;
+        Ok(())
     }
-    pub fn dump_index(&mut self,  ofile : &mut File, name : &str)
+    pub fn dump_index(&mut self,  ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
-        write!(ofile,"const PFXglyph {}Glyphs[] PROGMEM = {{\n", name);
+      write!(ofile,"const PFXglyph {}Glyphs[] PROGMEM = {{\n", name)?;
       for i in self.first..=self.last
       {
         let glyph=(self.processed_glyphs[i-self.first]).clone();
@@ -314,47 +315,47 @@ impl  Engine
                glyph.height,
                glyph.xAdvance,
                glyph.xOffset,
-               glyph.yOffset as isize);
-               write!(ofile,",   // {:#04x} '{}' \n", i,i as u8 as char);
+               glyph.yOffset as isize)?;
+               write!(ofile,",   // {:#04x} '{}' \n", i,i as u8 as char)?;
       }
-      write!(ofile,"\n}};\n");
+      write!(ofile,"\n}};\n")?;
+      Ok(())
     }
     
     
 
 
-    pub fn dump_footer(&mut self,  ofile : &mut File, name : &str) -> ()
+    pub fn dump_footer(&mut self,  ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
   // Output font structure
-        write!(ofile,"const PFXfont {} PROGMEM = {{\n", name);
-        write!(ofile,"  (uint8_t  *){}Bitmaps,\n", name);
-        write!(ofile,"  (PFXglyph *){}Glyphs,\n", name);
+        write!(ofile,"const PFXfont {} PROGMEM = {{\n", name)?;
+        write!(ofile,"  (uint8_t  *){}Bitmaps,\n", name)?;
+        write!(ofile,"  (PFXglyph *){}Glyphs,\n", name)?;
         if self.face_height == 0
         {  // No face height info, assume fixed width and get from a glyph.
-            write!(ofile,"  {:#04x}, {:#04x}, {}, // first, last, advance (approx)\n" , self.first, self.last, self.processed_glyphs[0].height);
+            write!(ofile,"  {:#04x}, {:#04x}, {}, // first, last, advance (approx)\n" , self.first, self.last, self.processed_glyphs[0].height)?;
         }
         else
         {
-            write!(ofile,"  {:#04x}, {:#04x}, {},// first, last, advance\n" , self.first, self.last, self.face_height);         
+            write!(ofile,"  {:#04x}, {:#04x}, {},// first, last, advance\n" , self.first, self.last, self.face_height)?;
         }
-        write!(ofile,"  {},{}}}; // bit per pixel, compression \n\n",self.bpp,self.compression as usize);
+        write!(ofile,"  {},{}}}; // bit per pixel, compression \n\n",self.bpp,self.compression as usize)?;
         let sz=self.bp.size();
         if self.compression
         {
-//            print!("// Bitmap uncompressed : about {} bytes ({} kBytes)\n",_totalUncompressedSize,(_totalUncompressedSize+1023)/1024);    
-write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);            
-//            print!("// compressed size : {} %\n",(100*sz)/_totalUncompressedSize);
+            write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
         }
         else {
-            write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);            
+            write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
         }
 
         let sizeofglyph =  8; // FIXME BADLY
         let mut sz=(self.last-self.first+1)*sizeofglyph;
-        write!(ofile,"// Header : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);
+        write!(ofile,"// Header : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
         sz=sz+self.bp.size()+sizeofglyph;
-        write!(ofile,"//--------------------------------------\n");
-        write!(ofile,"// total : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024);
+        write!(ofile,"//--------------------------------------\n")?;
+        write!(ofile,"// total : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
+        Ok(())
     }
 }
 // EOF
