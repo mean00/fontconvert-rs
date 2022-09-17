@@ -137,11 +137,7 @@ impl  Engine
         self.first = first as usize;
         self.last = last as usize;
         self.compression = compression;
-        let status = match bpp
-        {
-            1 => self.convert1bit( map ),
-            _ => Err(EngineError::InternalError)?,
-        };
+        let status =  self.convertNbit( bpp as usize,map );        
         Ok(())
     }
     ///
@@ -160,9 +156,9 @@ impl  Engine
     ///
     /// 
     /// 
-    fn convert1bit(&mut self, map : &[u8;256] ) ->  Result< () , EngineError> 
+    fn convertNbit(&mut self, bpp: usize, map : &[u8;256] ) ->  Result< () , EngineError> 
     {
-        self.bpp = 1;
+        self.bpp = bpp;
         let zeroGlyph :  PFXGlyph = PFXGlyph {            bitmapOffset : 0,
                                                             width : 0,
                                                             height : 0,
@@ -186,10 +182,16 @@ impl  Engine
            
             if ok
             {
-                ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_MONO ));
+                if bpp == 1
+                {
+                    ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_MONO ));
+                }else
+                {
+                    ok = self.checkOk( self.face.load_char(i , ft::face::LoadFlag::TARGET_NORMAL ));
+                }
             }
             let metrics =  self.face.size_metrics().unwrap();
-            self.face_height = (metrics.height /64) as i8;
+            self.face_height = (metrics.height / 64) as i8;
             //self.face_height = self.face.size_metrics().unwrap().height as i8;
            // if ok
            // {
@@ -221,7 +223,15 @@ impl  Engine
             {
                 x_advance = x_advance >> 16;
             }
-            let rbitmap: ft::BitmapGlyph=  gl.to_bitmap(ft::RenderMode::Mono, None).unwrap();                        
+            let rbitmap: ft::BitmapGlyph;
+            if bpp == 1
+            {
+                rbitmap =  gl.to_bitmap(ft::RenderMode::Mono, None).unwrap();
+            }
+            else
+            {
+                rbitmap =  gl.to_bitmap(ft::RenderMode::Normal, None).unwrap();
+            }
             let left = rbitmap.left();
             let top = rbitmap.top();
             let bitmap: ft::Bitmap = rbitmap.bitmap();
@@ -251,16 +261,29 @@ impl  Engine
             for y in 0..hh
             {
                 let index = y*pitch ;
-                for x in 0..ww
+                let mut pix : u8;
+                for x  in 0..ww
                 {
-                        let v= bits[(index+(x>>3)) as usize];
-                        let mask = 0x80>> (x&7);
-                        if (v & mask)!=0
-                        {
-                            self.bp.add1bits(1);
-                        }else {
-                            self.bp.add1bits(0);
-                        }
+                    match bpp
+                    {
+                        1 => {
+                            let v= bits[(index+(x>>3)) as usize];
+                            let mask = 0x80>> (x&7);
+                            if (v & mask)!=0
+                            {
+                                self.bp.add1bits(1);
+                            }else {
+                                self.bp.add1bits(0);
+                            }
+                        },
+                        4 => self.bp.add4bits( bits[ (index+x) as usize] >> 4 ),
+                        2 => {  pix= (bits[ (index+x) as usize]+31) >> 6;
+                                if pix>3  {pix=3;}
+                                self.bp.add2bits(pix as u8);
+                             },
+
+                        _ => panic!("oopsie"),
+                    }                    
                 }                
             }            
         
@@ -277,7 +300,6 @@ impl  Engine
         }
         Ok(())
     }
-
     fn compressInPlace(&mut self, offset : usize, size : usize) -> usize
     {
         let cfg = hs::Config::new(8,4).unwrap();

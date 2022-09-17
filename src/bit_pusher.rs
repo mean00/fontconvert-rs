@@ -88,7 +88,7 @@ impl BitPusher
     }
     fn checkAlign(&mut self) -> ()
     {
-        if self.bit < 0
+        if self.bit <= 0
         {
             self.align();
         }

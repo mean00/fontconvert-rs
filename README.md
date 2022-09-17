@@ -26,6 +26,6 @@ OPTIONS:
 
 NB: -k and -b/-e should not be used together
 
-Build : cargo build --release 
+
 
 
