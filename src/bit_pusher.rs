@@ -23,7 +23,6 @@ impl BitPusher
             buffer: [0 ; BUFFER_SIZE],
         }
     }
-
 ///
     pub fn extract(&mut self, start : usize, size : usize) -> &[u8]
     {
@@ -88,7 +87,7 @@ impl BitPusher
     }
     fn checkAlign(&mut self) -> ()
     {
-        if self.bit <= 0
+        if self.bit < 0
         {
             self.align();
         }

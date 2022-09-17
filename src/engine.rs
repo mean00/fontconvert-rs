@@ -1,13 +1,10 @@
-
-
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(non_snake_case)]
 
-
-
 extern crate freetype as ft;
 extern crate heatshrink;
+
 use ft::FtResult as FtResult;
 use heatshrink as hs;
 use std::fs::File;
@@ -15,7 +12,6 @@ use std::io::{Write};
 
 use crate::bit_pusher;
 const DPI: u32 = 141; // Approximate res. of Adafruit 2.8" TFT
-
 
 #[derive(Debug)]
 
@@ -130,7 +126,7 @@ impl  Engine
             }
             if first==-1
             {
-                    first=i as isize;
+                first=i as isize;
             }
             last=i as isize;
         }
@@ -192,11 +188,6 @@ impl  Engine
             }
             let metrics =  self.face.size_metrics().unwrap();
             self.face_height = (metrics.height / 64) as i8;
-            //self.face_height = self.face.size_metrics().unwrap().height as i8;
-           // if ok
-           // {
-           //     ok = self.checkOk(  self.face.glyph().render_glyph( ft::RenderMode::Normal));
-           // }            
             if ok
             {                
                 let r= self.face.glyph().get_glyph();
@@ -272,8 +263,10 @@ impl  Engine
                             if (v & mask)!=0
                             {
                                 self.bp.add1bits(1);
+                                //print!("*");
                             }else {
                                 self.bp.add1bits(0);
+                                //print!(".");
                             }
                         },
                         4 => self.bp.add4bits( bits[ (index+x) as usize] >> 4 ),
@@ -284,23 +277,27 @@ impl  Engine
 
                         _ => panic!("oopsie"),
                     }                    
-                }                
+                }        
+                //print!("\n");        
             }            
         
             self.bp.align();
-            println!("Processed {} glyphs, bitmap size {}",self.processed_glyphs.len(),self.bp.size());
+            //println!("Processed {} glyphs, bitmap size {}",self.processed_glyphs.len(),self.bp.size());
             if self.compression
             {
-                // in pace packing...
+                // in place heatshrinking ...
                 let original_size = self.bp.size()-start_offset;
                 self.uncompressed += original_size;
-                let size = self.compressInPlace(start_offset,original_size);
+                let size = self.compress_in_place(start_offset,original_size);
                 self.bp.set_offset(start_offset+size);
             }
         }
         Ok(())
     }
-    fn compressInPlace(&mut self, offset : usize, size : usize) -> usize
+    ///
+    ///
+    /// 
+    fn compress_in_place(&mut self, offset : usize, size : usize) -> usize
     {
         let cfg = hs::Config::new(8,4).unwrap();
         let mut output : [u8;20*1024]=[0;20*1024];
@@ -313,6 +310,9 @@ impl  Engine
         };
         compressed_size
     }
+    ///
+    /// 
+    /// 
     pub fn dump_bitmap(&mut self, ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
         write!(ofile,"const uint8_t {}Bitmaps[] PROGMEM = {{\n ",name)?;
@@ -334,6 +334,9 @@ impl  Engine
         write!(ofile," }};\n\n")?;
         Ok(())
     }
+    ///
+    /// 
+    /// 
     pub fn dump_index(&mut self,  ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
       write!(ofile,"const PFXglyph {}Glyphs[] PROGMEM = {{\n", name)?;
@@ -352,10 +355,9 @@ impl  Engine
       write!(ofile,"\n}};\n")?;
       Ok(())
     }
-    
-    
-
-
+    ///
+    /// 
+    /// 
     pub fn dump_footer(&mut self,  ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
   // Output font structure
