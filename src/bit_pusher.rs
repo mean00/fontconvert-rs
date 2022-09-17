@@ -48,11 +48,13 @@ impl BitPusher
     pub fn swallow(&mut self, data : &[u8]) -> ()
     {
         let n = data.len();
-        for i in 0..n
-        {
-            self.buffer[self.index]=data[i];
-            self.index+=1;
-        }
+        self.buffer[ self.index..(self.index+n)].clone_from_slice(data);
+        self.index+=n;
+        //for i in 0..n
+        //{
+        //    self.buffer[self.index]=data[i];
+        //    self.index+=1;
+        //}
     }
     pub fn add8bits(&mut self, val: u8) -> ()
     {
