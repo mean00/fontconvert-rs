@@ -57,6 +57,15 @@ fn print_output_header(mut out:&File,_args:&Config) -> Result< () ,std::io::Erro
     
     Ok(())
 }
+
+fn write_file(engine : &mut engine::Engine, out : &mut File, symbol : &String ) -> Result< () ,std::io::Error>
+{    
+    engine.dump_bitmap( out, &symbol)?;
+    engine.dump_index( out, &symbol)?;
+    engine.dump_footer( out, &symbol)?;
+    Ok(())
+}
+
 /**
  * 
  */
@@ -104,13 +113,17 @@ fn main() {
 
 
     let mut ofile = File::create(args.output_file.clone()).expect("unable to create file");        
-    print_output_header(&ofile,&args);
-    engine.dump_bitmap(&mut ofile, &symbol_name);
-    engine.dump_index(&mut ofile, &symbol_name);
-    engine.dump_footer(&mut ofile, &symbol_name);
-
+    match print_output_header(&ofile,&args)
+    {
+        Ok(_x) => (),
+        Err(_x) => panic!("Cannot create output file"),
+    }
+    match write_file(&mut engine , &mut ofile, &symbol_name)
+    {
+        Ok(_x) => (),
+        Err(_x) => panic!("Cannot create output file"),
+    }
     drop(ofile); // make sure it's closed
-
 
     println!("-Done-") 
 }
