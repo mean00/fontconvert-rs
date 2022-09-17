@@ -84,9 +84,8 @@ fn main() {
     if args.pick.len()!=0
     {
         for i in args.pick.chars()
-        {
-            let c: usize = mapp[i as usize] as usize;
-            mapp[c]=1;
+        {            
+            mapp[i as usize]=1;
         }    
     }else
     {
