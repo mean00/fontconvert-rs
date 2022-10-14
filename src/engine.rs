@@ -314,6 +314,94 @@ impl  Engine
     ///
     /// 
     /// 
+    pub fn dump_bitmap_rs( &mut self, ofile : &mut File) -> Result< () ,std::io::Error>
+    {
+        let sz = self.bp.size();
+        write!(ofile,"\t\t")?;
+        let mut tab=0;
+        for i in 0..sz
+        {
+            
+            write!(ofile," {:#04X},",self.bp.data(i))?;
+            tab=tab+1;
+            if tab==12
+            {
+                write!(ofile,"\n\t\t")?;
+                tab=0;
+            }
+        }
+        write!(ofile,"\n")?;
+        Ok(())
+    }
+    pub fn dump_glyph_rs( &mut self, ofile : &mut File) -> Result< () ,std::io::Error>
+    {        
+        for i in self.first..=self.last
+        {
+          let glyph=(self.processed_glyphs[i-self.first]).clone();
+          write!(ofile,"\t\t\t{{ PFXglyph{{")?;
+          write!(ofile, "offset : {} ,", glyph.bitmapOffset)?;
+          write!(ofile," \twidth : {} ,",glyph.width);
+          write!(ofile," \theight : {} ,",glyph.height);
+          write!(ofile," \tx_advance : {} ,",glyph.xAdvance);
+          write!(ofile," \tx_offset : {} ,",glyph.xOffset);
+          write!(ofile," \ty_offset : {} }} }}",glyph.yOffset);
+          write!(ofile,",   // {:#04x} '{}' \n", i,i as u8 as char)?;
+        }
+        Ok(())
+    }
+
+    ///
+    /// 
+    /// 
+    pub fn dump_rs( &mut self, ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
+    {        
+        self.bp.align();
+        
+        // dump bitmap
+        write!(ofile,"const {}_bitmap :  [u8;{}] = [\n",name,self.bp.size())?;
+        self.dump_bitmap_rs(ofile)?;
+        write!(ofile,"];\n")?;
+
+        // dump glyphs
+        write!(ofile,"const {}_glyphs :  [PFXglyph;{}] = [\n",name,1+self.last-self.first)?;
+        self.dump_glyph_rs(ofile)?;
+        write!(ofile,"];\n")?;
+
+        // main
+        write!(ofile,"const {} :  PFXfont = PFXfont {{\n",name)?;
+        write!(ofile,"\tbitmap : &{}_bitmap,\n",name)?;
+        write!(ofile,"\tglyphs : &{}_glyphs,\n", name)?;        
+        write!(ofile,"\tfirst    :  {:#04x} ,\n", self.first)?;
+        write!(ofile,"\tlast     :  {:#04x} ,\n", self.last)?;
+        write!(ofile,"\ty_advance :  {} ,\n",      self.processed_glyphs[0].height)?;
+        write!(ofile,"\tbpp      :  {} ,\n",      self.bpp)?;
+        write!(ofile,"\tshrinked :  {} ,\n",      self.compression as usize);
+        write!(ofile,"}};\n");
+
+
+        let sz=self.bp.size();
+        if self.compression
+        {
+            write!(ofile,"// Bitmap uncompressed  : about {} bytes ({} kBytes)\n",self.uncompressed, (self.uncompressed+1023)/1024)?;
+            write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
+            write!(ofile,"// Bitmap compression   : {}%\n", (((sz as f32)*100.)/(self.uncompressed as f32)) as u32)?;
+        }
+        else {
+            write!(ofile,"// Bitmap output size   : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
+        }
+    
+        let sizeofglyph =  8; // FIXME BADLY
+        let sizeofpfxgly: usize = 16;
+        let mut sz=(self.last-self.first+1)*sizeofglyph;
+        write!(ofile,"// Header : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
+        sz=sz+self.bp.size()+sizeofpfxgly;
+        write!(ofile,"//--------------------------------------\n")?;
+        write!(ofile,"// Total : about {} bytes ({} kBytes)\n",sz,(sz+1023)/1024)?;
+        Ok(())
+    }
+    ///
+    /// 
+    /// 
     pub fn dump_bitmap(&mut self, ofile : &mut File, name : &str) -> Result< () ,std::io::Error>
     {
         write!(ofile,"const uint8_t {}Bitmaps[] PROGMEM = {{\n ",name)?;
