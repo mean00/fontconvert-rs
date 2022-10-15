@@ -22,6 +22,7 @@ struct Config {
     /// output file (C header)
     #[clap(short, long)]
     output_file: Option<String>,
+    /// output file (rust header)
     #[clap(short='r', long)]
     output_file_rs: Option<String>,
     /// bitmap file
