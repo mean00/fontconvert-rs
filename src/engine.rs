@@ -368,7 +368,7 @@ impl  Engine
         write!(ofile,"];\n")?;
 
         // main
-        write!(ofile,"const {} :  PFXfont = PFXfont {{\n",name)?;
+        write!(ofile,"pub const {} :  PFXfont = PFXfont {{\n",name)?;
         write!(ofile,"\tbitmap : &{}_bitmap,\n",name)?;
         write!(ofile,"\tglyphs : &{}_glyphs,\n", name)?;        
         write!(ofile,"\tfirst    :  {:#04x} ,\n", self.first)?;
