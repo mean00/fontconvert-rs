@@ -340,11 +340,11 @@ impl  Engine
           let glyph=(self.processed_glyphs[i-self.first]).clone();
           write!(ofile,"\t\t\t{{ PFXglyph{{")?;
           write!(ofile, "offset : {} ,", glyph.bitmapOffset)?;
-          write!(ofile," \twidth : {} ,",glyph.width);
-          write!(ofile," \theight : {} ,",glyph.height);
-          write!(ofile," \tx_advance : {} ,",glyph.xAdvance);
-          write!(ofile," \tx_offset : {} ,",glyph.xOffset);
-          write!(ofile," \ty_offset : {} }} }}",glyph.yOffset);
+          write!(ofile," \twidth : {} ,",glyph.width)?;
+          write!(ofile," \theight : {} ,",glyph.height)?;
+          write!(ofile," \tx_advance : {} ,",glyph.xAdvance)?;
+          write!(ofile," \tx_offset : {} ,",glyph.xOffset)?;
+          write!(ofile," \ty_offset : {} }} }}",glyph.yOffset)?;
           write!(ofile,",   // {:#04x} '{}' \n", i,i as u8 as char)?;
         }
         Ok(())
@@ -375,8 +375,8 @@ impl  Engine
         write!(ofile,"\tlast     :  {:#04x} ,\n", self.last)?;
         write!(ofile,"\ty_advance :  {} ,\n",      self.processed_glyphs[0].height)?;
         write!(ofile,"\tbpp      :  {} ,\n",      self.bpp)?;
-        write!(ofile,"\tshrinked :  {} ,\n",      self.compression as usize);
-        write!(ofile,"}};\n");
+        write!(ofile,"\tshrinked :  {} ,\n",      self.compression as usize)?;
+        write!(ofile,"}};\n")?;
 
 
         let sz=self.bp.size();
