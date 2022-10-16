@@ -253,6 +253,7 @@ impl  Engine
             {
                 let index = y*pitch ;
                 let mut pix : i32;
+                let mut propagate : i32 =0;
                 for x  in 0..ww
                 {
                     match bpp
@@ -271,8 +272,14 @@ impl  Engine
                         },
                         4 => self.bp.add4bits( bits[ (index+x) as usize] >> 4 ),
                         2 => {  pix= bits[ (index+x) as usize] as i32;
-                                pix= (pix+31) >> 6;
+                                let mut org: i32=pix as i32;
+                                if org > 192
+                                {
+                                    org=192;
+                                }
+                                pix= (pix+propagate+31) >> 6;
                                 if pix>3  {pix=3;}
+                                propagate += org - ((pix<<6) as i32) ;
                                 self.bp.add2bits(pix as u8);
                              },
 
