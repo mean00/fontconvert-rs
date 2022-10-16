@@ -280,6 +280,15 @@ impl  Engine
                                 pix= (pix+propagate+31) >> 6;
                                 if pix>3  {pix=3;}
                                 propagate += org - ((pix<<6) as i32) ;
+                                if propagate > 192
+                                {
+                                    propagate=192;
+                                }
+                                if propagate < -192
+                                {
+                                    propagate=-192;
+                                }
+
                                 self.bp.add2bits(pix as u8);
                              },
 
