@@ -316,7 +316,7 @@ impl  Engine
     /// 
     fn compress_in_place(&mut self, offset : usize, size : usize) -> usize
     {
-        let cfg = hs::Config::new(8,4).unwrap();
+        let cfg = hs::Config::new(7,4).unwrap();
         let mut output : [u8;20*1024]=[0;20*1024];
         let compressed_size = match hs::encode(self.bp.extract(offset,size), 
             &mut output, 
