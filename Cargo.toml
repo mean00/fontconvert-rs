@@ -15,6 +15,12 @@ codegen-units = 1
 debug = 0
 
 
+[[bin]]
+name = "flatconvert-rs"
+test = false
+bench = false
+
+
 [dependencies]
 freetype-rs = { version = "0.31.0"}
 clap = { version = "3.1.18",features = ["derive"]}

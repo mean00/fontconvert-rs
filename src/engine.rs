@@ -55,6 +55,8 @@ pub struct Engine
     processed_glyphs : Vec <PFXGlyph>,
     compression : bool, 
     uncompressed : usize,
+    hs_window    : usize, // max 7
+    hs_rewind    : usize, // max 4
 }
 
 /// Engine is the engine to convert TTF font
@@ -105,6 +107,9 @@ impl  Engine
                 bpp  : 0,
                 compression : false,
                 uncompressed : 0,
+                hs_window    : 7, // max 7
+                hs_rewind    : 4, // max 4
+                
         };
         Ok(e)
     }
@@ -316,7 +321,7 @@ impl  Engine
     /// 
     fn compress_in_place(&mut self, offset : usize, size : usize) -> usize
     {
-        let cfg = hs::Config::new(7,4).unwrap();
+        let cfg = hs::Config::new( self.hs_window as u8 , self.hs_rewind as u8).unwrap();
         let mut output : [u8;20*1024]=[0;20*1024];
         let compressed_size = match hs::encode(self.bp.extract(offset,size), 
             &mut output, 
@@ -392,6 +397,7 @@ impl  Engine
         write!(ofile,"\ty_advance :  {} ,\n",      self.processed_glyphs[0].height)?;
         write!(ofile,"\tbpp      :  {} ,\n",      self.bpp)?;
         write!(ofile,"\tshrinked :  {} ,\n",      self.compression as usize)?;
+        write!(ofile,"\ths_conf  :  {:#02x} ,\n",      ((self.hs_window as usize)<<4)+(self.hs_rewind as usize))?;
         write!(ofile,"}};\n")?;
 
 
