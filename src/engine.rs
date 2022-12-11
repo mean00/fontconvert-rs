@@ -3,10 +3,10 @@
 #![allow(non_snake_case)]
 
 extern crate freetype as ft;
-extern crate heatshrink;
+extern crate heatshrink_byte;
 
 use ft::FtResult as FtResult;
-use heatshrink as hs;
+use heatshrink_byte as hs;
 use std::fs::File;
 use std::io::{Write};
 

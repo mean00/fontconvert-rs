@@ -24,4 +24,5 @@ bench = false
 [dependencies]
 freetype-rs = { version = "0.31.0"}
 clap = { version = "3.1.18",features = ["derive"]}
-heatshrink = { version = "0.1.0" }
+heatshrink_byte = { git = "https://github.com/mean00/heatshrink" , features = ["encode"] }
+#heatshrink_byte = { path = "../heatshrink_rust", features = ["encode"] }
