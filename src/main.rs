@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 extern crate freetype as ft;
-extern crate heatshrink as hs;
+extern crate heatshrink_byte as hs;
 
 
 mod engine;
@@ -66,8 +66,8 @@ fn print_output_header_rs(mut out:&File,_args:&Config) -> Result< () ,std::io::E
     out.write_all(b"// a modified version of adafruit fontconvert \n")?;
     out.write_all(b"// RUST HEADER\n")?;
     out.write_all(b"#![allow(non_upper_case_globals)]\n")?;
-    out.write_all(b"use ili9341::glyph::PFXglyph;\n")?;
-    out.write_all(b"use ili9341::glyph::PFXfont;\n")?;
+    out.write_all(b"use simpler_gfx::PFXglyph;\n")?;
+    out.write_all(b"use simpler_gfx::PFXfont;\n")?;
     Ok(())
 }
 
